@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>दैनंदिन विक्री व्यवस्थापन</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+    body{
+      min-height:100vh;
+      background:linear-gradient(135deg,#ff9a44,#ffdd55);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+    }
+    .container{
+      width:100%;
+      max-width:1000px;
+      background:rgba(255,255,255,0.15);
+      backdrop-filter:blur(15px);
+      border-radius:25px;
+      padding:30px;
+      box-shadow:0 25px 50px rgba(0,0,0,0.25);
+      animation:fadeIn 1s ease;
+    }
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(30px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    h3{
+      text-align:center;
+      margin-bottom:25px;
+     
+      font-size:20px;
+      font-weight:700;
+      color:#fff;
+    }
+    h2{
+      text-align:center;
+      margin-bottom:10px;
+      font-size:30px;
+      font-weight:700;
+      color:#fff;
+    }
+    
+    .card{
+      background:#ffffffee;
+      padding:20px;
+      border-radius:20px;
+      box-shadow:0 15px 35px rgba(0,0,0,0.2);
+      margin-bottom:25px;
+      transition:0.3s;
+    }
+    .card:hover{ transform:translateY(-5px); }
+    label{font-weight:600;margin-top:10px;display:block}
+    input{
+      width:100%; padding:10px; margin-top:5px;
+      border-radius:10px; border:2px solid #ddd; transition:0.3s;
+    }
+    input:focus{
+      border-color:#ff9a44; outline:none;
+      box-shadow:0 0 10px rgba(255,154,68,0.5);
+    }
+    button{
+      padding:10px 15px; border:none; border-radius:10px;
+      font-weight:600; cursor:pointer; transition:0.3s;
+    }
+    .save-btn{
+      background:linear-gradient(135deg,#ff512f,#dd2476);
+      color:#fff; width:100%; margin-top:15px;
+    }
+    .save-btn:hover{ transform:scale(1.05); }
+    .delete-btn{ background:#ff4d4d; color:#fff; }
+    .delete-btn:hover{ transform:scale(1.1); }
+    table{ width:100%; border-collapse:collapse; margin-top:15px; }
+    th,td{ padding:10px; text-align:center; }
+    th{ background:#ff9a44; color:#fff; }
+    tr:hover{ background:#fff3cd; }
+    .monthly-box{
+      background:linear-gradient(135deg,#11998e,#38ef7d);
+      color:#fff;
+      font-size:20px;
+      font-weight:700;
+      text-align:center;
+      padding:15px;
+      border-radius:15px;
+      margin-top:15px;
+      animation:pulse 2s infinite;
+    }
+    @keyframes pulse{
+      0%{transform:scale(1)}
+      50%{transform:scale(1.03)}
+      100%{transform:scale(1)}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>श्री स्वामी समर्थ <span>पाणीपुरी</span></h2>
+
+    <h3>दैनंदिन विक्री व्यवस्थापन 📊</h3>
+
+    <div class="card">
+      <h3>नवीन नोंद जोडा</h3>
+      <label>दिनांक (Auto Set)</label>
+      <input type="date" id="date" readonly>
+
+      <label>एकूण विक्री (₹)</label>
+      <input type="number" id="income" placeholder="रक्कम भरा">
+
+      <button class="save-btn" onclick="addRecord()">नोंद जतन करा</button>
+    </div>
+
+    <div class="card">
+      <h3>दिनांकानुसार नोंदी</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>दिनांक</th>
+            <th>विक्री</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody id="recordTable"></tbody>
+      </table>
+
+      <div class="monthly-box" id="monthlyIncome">
+        या महिन्याची एकूण विक्री: ₹ 0
+      </div>
+    </div>
+  </div>
+
+<script>
+  function getTodayDate(){
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth()+1).padStart(2,'0');
+    const day = String(now.getDate()).padStart(2,'0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getCurrentMonth(){
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+
+  function setAutoDate(){
+    document.getElementById('date').value = getTodayDate();
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    setAutoDate();
+    updateUI();
+  });
+
+  setInterval(setAutoDate,30000);
+
+  let records = JSON.parse(localStorage.getItem('salesData')) || [];
+
+  function saveData(){
+    localStorage.setItem('salesData', JSON.stringify(records));
+  }
+
+  function updateUI(){
+    const table = document.getElementById('recordTable');
+    table.innerHTML = '';
+
+    let monthlyTotal = 0;
+    const currentMonth = getCurrentMonth();
+
+    records.forEach((r,index)=>{
+      const row = `<tr>
+        <td>${r.date}</td>
+        <td>₹ ${r.income}</td>
+        <td><button class="delete-btn" onclick="deleteRecord(${index})">❌</button></td>
+      </tr>`;
+      table.innerHTML += row;
+
+      if(r.date.startsWith(currentMonth)){
+        monthlyTotal += parseFloat(r.income);
+      }
+    });
+
+    document.getElementById('monthlyIncome').innerText =
+      `या महिन्याची एकूण विक्री: ₹ ${monthlyTotal}`;
+  }
+
+  function addRecord(){
+    const date = getTodayDate();
+    const income = document.getElementById('income').value;
+
+    if(!income){
+      alert('कृपया विक्री रक्कम भरा');
+      return;
+    }
+
+    records.unshift({date,income});
+    saveData();
+    updateUI();
+
+    document.getElementById('income').value='';
+    setAutoDate();
+  }
+
+  function deleteRecord(index){
+    if(confirm('ही नोंद डिलीट करायची आहे का?')){
+      records.splice(index,1);
+      saveData();
+      updateUI();
+    }
+  }
+</script>
+
+</body>
+</html>
